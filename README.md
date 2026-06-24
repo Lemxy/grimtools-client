@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🛠️ GrimTool — Desktop-клиент на Tauri + Rust
+# 🛠️ GrimTool — Desktop Client built with Tauri + Rust
 
-**Нативное desktop-приложение на Rust (Tauri 2) и React 19 / TypeScript**
+**A native desktop application: Rust backend (Tauri 2) + React 19 / TypeScript UI**
 
 ![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
 ![Tauri](https://img.shields.io/badge/Tauri_2-24C8DB?style=flat&logo=tauri&logoColor=white)
@@ -14,61 +14,61 @@
 
 ---
 
-> ⚠️ **Это портфолио-снэпшот клиентского приложения.** Серверная часть, инфраструктура распространения и все реальные сетевые адреса из исходников удалены или заменены на нерабочие плейсхолдеры (`*.invalid`). Код собирается, интерфейс открывается и полностью кликабелен — но достучаться до настоящего сервера не получится, скачивать/активировать тут нечего. Цель репозитория — показать инженерную работу, а не запустить оригинальный продукт.
+> ⚠️ **This is a portfolio snapshot of the client application only.** The backend service, distribution infrastructure, and every real network endpoint in the source have been removed or replaced with non-resolving placeholder domains (`*.invalid`). The code builds and the UI is fully clickable — but there's nothing real to connect to, download, or activate. This repo exists to show the engineering, not to run the original product.
 
-## 📦 Что внутри
+## 📦 What this is
 
-Приложение для управления локальной библиотекой Steam: нативная интеграция с Windows, кастомный desktop UI, и architecture поверх Tauri command bridge между Rust-бэкендом и React-фронтендом.
+A desktop app for managing a local Steam library: native Windows integration, a fully custom desktop UI, and an architecture built around the Tauri command bridge between the Rust backend and the React frontend.
 
-## 🦀 Нативная интеграция с Windows (Rust)
+## 🦀 Native Windows integration (Rust)
 
-- Парсинг `libraryfolders.vdf` — собственного key-value формата Valve — для поиска **всех** Steam-библиотек на машине, а не только пути по умолчанию.
-- Чтение/запись веток реестра Windows (`winreg`) для идентификации машины и хранения состояния приложения.
-- Hardware fingerprint на основе `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid` — привязка сессионных токенов к устройству.
-- Запуск и управление внешними процессами (`std::process::Command`) — перезапуск Steam, PowerShell-хелперы, в том числе с повышением прав (`-Verb RunAs`) и флагом `CREATE_NO_WINDOW`.
+- Parses `libraryfolders.vdf` — Valve's own key-value format — to discover **every** Steam library on a machine, not just the default install path.
+- Reads/writes Windows Registry keys (`winreg`) for machine identification and persisted app state.
+- Builds a hardware fingerprint from `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`, used to bind session tokens to a specific device.
+- Spawns and manages external processes (`std::process::Command`) — restarting Steam, PowerShell helpers — including elevated (`-Verb RunAs`) invocations and the `CREATE_NO_WINDOW` flag.
 
-## 🌐 Сетевой слой и архитектура клиента (Rust + TypeScript)
+## 🌐 Networking & client architecture (Rust + TypeScript)
 
-- Весь HTTP-трафик идёт через Tauri-команды (`api_get`/`api_post`) на нативном `reqwest`-клиенте, а не через прямой `fetch()` из WebView — заголовки авторизации и подпись запросов недостижимы для JS в рендерере.
-- Стриминговые загрузки с live-прогрессом через `window.emit` обратно во фронтенд — для пакетной установки нескольких файлов.
-- JWT-авторизация с привязкой к устройству (claim в токене сверяется с заголовком запроса) — защита от шеринга токена между разными машинами.
-- Обёртка `invokeWithTimeout` вокруг каждого вызова `invoke()` — интерфейс никогда не подвешивается на мёртвой нативной команде.
+- All HTTP traffic goes through Tauri commands (`api_get`/`api_post`) backed by a native `reqwest` client, instead of calling `fetch()` directly from the WebView — auth headers and request signing never touch renderer-side JS.
+- Streaming downloads emit live progress events back to the frontend (`window.emit`) for multi-file batch installs.
+- JWT auth with device binding — a claim baked into the token is checked against a request header on every call, preventing a token from being shared across machines.
+- An `invokeWithTimeout` wrapper around every Tauri `invoke()` call, so the UI never hangs on a native command that never returns.
 
-## ⚛️ Фронтенд (React 19 / TypeScript / Framer Motion)
+## ⚛️ Frontend (React 19 / TypeScript / Framer Motion)
 
-- Полностью кастомная библиотека компонентов без UI-фреймворка — каждая модалка, таб-система и карточка собраны вручную на инлайн-стилях с общими design-токенами (`constants/colors.ts`).
-- Разделённое состояние по контекстам (`Theme → UI → Auth → Games`), чтобы изменения в одном слое не вызывали лишние перерендеры по всему дереву.
-- Framer Motion — переходы между состояниями, 3D-наклон карточек по курсору, анимированные статус-поверхности.
-- Собственный пайплайн тостов/статусов, который классифицирует исход операции (успех/ошибка/инфо) по содержимому сообщения, без необходимости размечать тип в каждом месте вызова.
+- A fully custom component library, no UI framework — every modal, tab system, and card is hand-built on inline styles driven by a shared design-token module (`constants/colors.ts`).
+- State split across contexts (`Theme → UI → Auth → Games`) so a change in one layer doesn't cascade re-renders through the whole tree.
+- Framer Motion for state transitions, cursor-tracked 3D card tilt, and animated status surfaces.
+- A small toast/status pipeline that classifies an outcome (success/error/info) from the message content itself, so call sites don't need to pass a type explicitly.
 
-## 🔧 backend-example/ — паттерн серверной части
+## 🔧 backend-example/ — the server-side pattern
 
-Оригинальный продакшен-сервер сюда не публикуется (бизнес-логика и инфраструктура реального сервиса). Вместо этого — `backend-example/server.js`: отдельный иллюстративный пример на Express, показывающий тот же архитектурный паттерн, который реально использовался:
+The original production server isn't published here — it's tied to the real service's business logic and infrastructure. Instead, `backend-example/server.js` is a standalone, illustrative Express app showing the same architectural pattern that was actually used:
 
-- Express + `helmet` + `cors` (allowlist по origin) + `express-rate-limit`
-- JWT-авторизация с привязкой токена к `deviceId`
-- **Двухфазная активация лимита** — `check-limit` (превью без списания) → `confirm-activation` (реальное списание только после подтверждённого успеха на клиенте). Список лимита сразу на превью-этапе создаёт ровно ту гонку, что разбиралась при фиксе реального бага: неудачная попытка на клиенте всё равно сжигала бы лимит пользователя.
+- Express + `helmet` + `cors` (origin allowlist) + `express-rate-limit`
+- JWT auth with a token bound to `deviceId`
+- **Two-phase quota activation** — `check-limit` (a preview, no deduction) → `confirm-activation` (the real deduction, only after the client confirms the operation actually succeeded). Deducting the quota at the preview step instead creates exactly the race condition that came up while fixing a real production bug: a failed client-side attempt would still burn the user's quota with nothing to show for it.
 
-## 🧱 Стек
+## 🧱 Stack
 
-| Слой | Технологии |
+| Layer | Tech |
 |---|---|
 | Desktop shell | Tauri 2 |
-| Нативный бэкенд | Rust (`reqwest`, `winreg`, `serde`) |
+| Native backend | Rust (`reqwest`, `winreg`, `serde`) |
 | UI | React 19, TypeScript, Vite 7 |
-| Анимации | Framer Motion |
-| Стили | Инлайн-стили + design-токены, Tailwind — для части shadcn-компонентов |
+| Animation | Framer Motion |
+| Styling | Inline styles + design tokens, Tailwind for a handful of shadcn-derived primitives |
 
-## 🚀 Запуск локально
+## 🚀 Running locally
 
 ```bash
 npm install
 npm run tauri dev
 ```
 
-Приложение запустится, интерфейс полностью рабочий и кликабельный — но каждый сетевой вызов идёт на плейсхолдер-домен `*.invalid`. Логин, активация и загрузка не сработают намеренно: настоящего сервера в этом репозитории нет.
+The app launches and the UI is fully navigable, but every network call points at a placeholder `*.invalid` domain — login, activation, and downloads fail by design, since there's no real backend in this repo.
 
-Пример backend-паттерна — отдельно:
+The backend pattern example runs separately:
 
 ```bash
 cd backend-example
@@ -76,11 +76,11 @@ npm install
 npm start
 ```
 
-## 📁 Структура проекта
+## 📁 Project layout
 
 ```
-src/                  React UI — компоненты, страницы, контекст-провайдеры
-src-tauri/src/        Rust-бэкенд — Tauri-команды, интеграция со Steam и Windows
-src/constants/        Design-токены, строки интерфейса
-backend-example/      Иллюстративный пример серверного паттерна (не прод-сервер)
+src/                  React UI — components, pages, context providers
+src-tauri/src/        Rust backend — Tauri commands, Steam/Windows integration
+src/constants/        Design tokens, UI strings
+backend-example/      Illustrative server-side pattern (not the production server)
 ```
