@@ -1,10 +1,3 @@
-/**
- * Иллюстративный пример backend-паттерна для desktop-клиента с device-bound
- * лицензированием. Написан отдельно для портфолио — это НЕ продакшен-сервер
- * оригинального проекта (тот не публикуется намеренно). Здесь показана та же
- * архитектура (auth, device-binding, rate limiting, двухфазное списание лимита),
- * но на нейтральных сущностях "license/plan" вместо доменной логики исходного продукта.
- */
 'use strict';
 
 require('dotenv').config();
@@ -27,8 +20,6 @@ app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.disable('x-powered-by');
 
-// CORS: нативные клиенты (Tauri/reqwest) не шлют заголовок Origin вообще — пропускаем.
-// Браузерные origin'ы — только из явного allowlist в .env.
 const ALLOWLIST = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
   origin(origin, cb) {
@@ -42,7 +33,6 @@ const authLimiter   = rateLimit({ windowMs: 10 * 60 * 1000, max: 20 });
 const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000 });
 app.use(globalLimiter);
 
-// In-memory хранилище для примера — в реальном проекте здесь SQLite/Postgres.
 const users = new Map();
 const PLAN_LIMITS = { FREE: 1, PRO: 5, TEAM: 20, ENTERPRISE: Infinity };
 const CYCLE_MS = 48 * 60 * 60 * 1000;
@@ -52,8 +42,6 @@ function requireAuth(req, res) {
   if (!token) { res.status(401).json({ error: 'No token' }); return null; }
   try {
     const { email, deviceId } = jwt.verify(token, JWT_SECRET);
-    // Токен привязан к устройству, на котором выпущен — запрос должен прийти
-    // с того же deviceId. Защита от шеринга токена между разными машинами.
     const providedDevice = req.get('x-device-id') || req.body?.deviceId;
     if (deviceId && providedDevice && providedDevice !== deviceId) {
       res.status(401).json({ error: 'Device mismatch' });
@@ -99,10 +87,6 @@ app.post('/api/login', authLimiter, async (req, res) => {
   res.json({ token });
 });
 
-// Двухфазная активация: check-limit — превью без списания, confirm-activation — реальное
-// списание, только после того как клиент подтвердил успешное выполнение нативной операции.
-// Если списывать лимит прямо на check-limit, неудачная попытка на клиенте (сеть легла,
-// запись на диск не удалась) всё равно сжигала бы лимит пользователя без видимого результата.
 app.post('/api/check-limit', (req, res) => {
   let user = requireAuth(req, res);
   if (!user) return;

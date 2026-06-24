@@ -1,5 +1,4 @@
 
-
 export interface AccentColor {
   id: string;
   label: string;

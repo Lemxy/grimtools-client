@@ -1,5 +1,4 @@
 
-
 export const TITLEBAR_HEIGHT = 32;
 export const TOPBAR_HEIGHT = 56;
 export const TABS_BAR_HEIGHT = 56;

@@ -266,11 +266,6 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         }
       }
       updateStatus(`INJECTING ${game.name.toUpperCase()}...`);
-      // confirmActivation спускается в Rust: квота списывается там же, где реально
-      // дописываются файлы на диск (см. install_game_logic), а не отдельным запросом
-      // отсюда после resolve() — раньше клиентский таймаут ниже мог сработать раньше,
-      // чем Rust-таск (он не отменяется!) успешно доустанавливал игру в фоне, и тогда
-      // эта ветка вообще не выполнялась: игра была установлена, а квота не тратилась.
       await invokeWithTimeout('install_game_logic', {
         steamPath, appId: String(game.id), depots: [], luaName: `${game.id}.lua`,
         token: userToken, hwid, gameName: game.name, confirmActivation: !isAlready,

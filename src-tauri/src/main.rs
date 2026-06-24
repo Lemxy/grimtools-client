@@ -374,25 +374,11 @@ async fn install_game_logic(
         }
     }
 
-    // AppList-запись делаем ТОЛЬКО после успешной загрузки lua и всех манифестов.
-    // Раньше она писалась первой строкой функции, до любых сетевых операций — из-за
-    // этого SteamTools мог показывать игру как добавленную даже если скачивание
-    // lua/манифеста дальше падало с ошибкой. Теперь файл появляется только когда
-    // установка действительно завершена успешно.
     let app_list_dir = base_path.join("AppList");
     fs::create_dir_all(&app_list_dir).map_err(|e| format!("Не удалось создать AppList: {}", e))?;
     fs::write(app_list_dir.join(format!("{}.txt", app_id)), &app_id)
         .map_err(|e| format!("Не удалось записать AppList: {}", e))?;
 
-    // Подтверждение активации (списание квоты) выполняется здесь, той же функцией,
-    // что и сама установка — а не отдельным запросом с фронта после того, как invoke()
-    // резолвится. Раньше фронт ждал успешного ответа от install_game_logic с клиентским
-    // таймаутом (Promise.race), и если таймаут срабатывал первым, JS уходил в catch и
-    // никогда не вызывал /api/confirm-activation — а Rust-таск при этом продолжал
-    // работать в фоне и всё равно успешно дописывал файлы. В итоге игра реально
-    // выдавалась, а квота не тратилась. Теперь списание квоты привязано к тому же
-    // успешному пути выполнения, что и запись файлов на диск, и не зависит от того,
-    // успел ли фронт дождаться ответа.
     if confirm_activation {
         if let (Some(t), Some(name)) = (token.as_deref(), game_name.as_deref()) {
             if let Ok(client) = build_api_client() {
@@ -571,8 +557,6 @@ async fn integrity_sync_game(steam_path: String, app_id: String, depots: Vec<Dep
 
     let _ = fs::remove_dir_all(&integ_sync_dir);
 
-    // Как и в install_game_logic — AppList-запись делаем только после того, как все
-    // манифесты реально скачаны и разложены по библиотекам, а не в начале функции.
     let app_list_dir = base_path.join("AppList");
     fs::create_dir_all(&app_list_dir).map_err(|e| format!("Не удалось создать AppList: {}", e))?;
     fs::write(app_list_dir.join(format!("{}.txt", app_id)), &app_id)
