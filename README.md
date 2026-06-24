@@ -1,52 +1,86 @@
-# GrimTool — Tauri + Rust Desktop Client
+<div align="center">
 
-A desktop application built with **Tauri 2 / Rust** (native backend) and **React 19 / TypeScript** (UI), built as a deep-dive into Windows native integration, the Steam client/library file formats, and secure desktop-to-server communication patterns.
+# 🛠️ GrimTool — Desktop-клиент на Tauri + Rust
 
-> **This is a portfolio snapshot of the client application only.** The companion backend service, distribution infrastructure, and any network endpoints referenced in the source have been removed/replaced with placeholders (`*.invalid` domains). The code will compile and the UI runs, but it cannot reach any real server — there is nothing to download or activate. This repo exists to show the engineering, not to operate the original product.
+**Нативное desktop-приложение на Rust (Tauri 2) и React 19 / TypeScript**
 
-## What this demonstrates
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
+![Tauri](https://img.shields.io/badge/Tauri_2-24C8DB?style=flat&logo=tauri&logoColor=white)
+![React](https://img.shields.io/badge/React_19-149ECA?style=flat&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=flat&logo=framer&logoColor=white)
 
-**Native Windows integration (Rust)**
-- Parses Steam's `libraryfolders.vdf` (Valve's custom key-value format) to enumerate every Steam library folder on a machine, not just the default install path.
-- Reads/writes Windows Registry keys (`winreg`) for machine identification and persistent app state.
-- Builds a hardware fingerprint from `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid` for device-bound session tokens.
-- Spawns and manages external processes (Steam restarts, PowerShell helpers) via `std::process::Command`, including elevated (`-Verb RunAs`) invocations and Windows `CREATE_NO_WINDOW` flags.
+</div>
 
-**Networking & client architecture (Rust + TypeScript)**
-- All HTTP traffic is routed through Tauri commands (`api_get`/`api_post`) backed by a native `reqwest` client, rather than calling `fetch()` directly from the WebView — keeping auth headers and request signing out of renderer-accessible JS.
-- Streaming downloads with live progress events emitted back to the frontend (`window.emit`) for multi-file batch installs.
-- JWT-based auth with device-binding (HWID claim checked against request headers) to prevent token sharing across machines.
-- Timeout/retry wrapper (`invokeWithTimeout`) around every Tauri `invoke()` call so the UI never hangs on a dead native command.
+---
 
-**Frontend (React 19 / TypeScript / Framer Motion)**
-- Fully custom component library, no UI framework — every modal, tab system, and card is hand-built with inline styles driven by a shared design-token module (`constants/colors.ts`).
-- Context-split state management (`Theme` → `UI` → `Auth` → `Games`) so unrelated state changes don't cascade re-renders across the whole tree.
-- Framer Motion for layout transitions, 3D tilt-on-hover cards, and animated status surfaces.
-- A from-scratch toast/status pipeline that classifies outcome messages (success/error/info) without needing every call site to pass a type explicitly.
+> ⚠️ **Это портфолио-снэпшот клиентского приложения.** Серверная часть, инфраструктура распространения и все реальные сетевые адреса из исходников удалены или заменены на нерабочие плейсхолдеры (`*.invalid`). Код собирается, интерфейс открывается и полностью кликабелен — но достучаться до настоящего сервера не получится, скачивать/активировать тут нечего. Цель репозитория — показать инженерную работу, а не запустить оригинальный продукт.
 
-## Stack
+## 📦 Что внутри
 
-| Layer | Tech |
+Приложение для управления локальной библиотекой Steam: нативная интеграция с Windows, кастомный desktop UI, и architecture поверх Tauri command bridge между Rust-бэкендом и React-фронтендом.
+
+## 🦀 Нативная интеграция с Windows (Rust)
+
+- Парсинг `libraryfolders.vdf` — собственного key-value формата Valve — для поиска **всех** Steam-библиотек на машине, а не только пути по умолчанию.
+- Чтение/запись веток реестра Windows (`winreg`) для идентификации машины и хранения состояния приложения.
+- Hardware fingerprint на основе `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid` — привязка сессионных токенов к устройству.
+- Запуск и управление внешними процессами (`std::process::Command`) — перезапуск Steam, PowerShell-хелперы, в том числе с повышением прав (`-Verb RunAs`) и флагом `CREATE_NO_WINDOW`.
+
+## 🌐 Сетевой слой и архитектура клиента (Rust + TypeScript)
+
+- Весь HTTP-трафик идёт через Tauri-команды (`api_get`/`api_post`) на нативном `reqwest`-клиенте, а не через прямой `fetch()` из WebView — заголовки авторизации и подпись запросов недостижимы для JS в рендерере.
+- Стриминговые загрузки с live-прогрессом через `window.emit` обратно во фронтенд — для пакетной установки нескольких файлов.
+- JWT-авторизация с привязкой к устройству (claim в токене сверяется с заголовком запроса) — защита от шеринга токена между разными машинами.
+- Обёртка `invokeWithTimeout` вокруг каждого вызова `invoke()` — интерфейс никогда не подвешивается на мёртвой нативной команде.
+
+## ⚛️ Фронтенд (React 19 / TypeScript / Framer Motion)
+
+- Полностью кастомная библиотека компонентов без UI-фреймворка — каждая модалка, таб-система и карточка собраны вручную на инлайн-стилях с общими design-токенами (`constants/colors.ts`).
+- Разделённое состояние по контекстам (`Theme → UI → Auth → Games`), чтобы изменения в одном слое не вызывали лишние перерендеры по всему дереву.
+- Framer Motion — переходы между состояниями, 3D-наклон карточек по курсору, анимированные статус-поверхности.
+- Собственный пайплайн тостов/статусов, который классифицирует исход операции (успех/ошибка/инфо) по содержимому сообщения, без необходимости размечать тип в каждом месте вызова.
+
+## 🔧 backend-example/ — паттерн серверной части
+
+Оригинальный продакшен-сервер сюда не публикуется (бизнес-логика и инфраструктура реального сервиса). Вместо этого — `backend-example/server.js`: отдельный иллюстративный пример на Express, показывающий тот же архитектурный паттерн, который реально использовался:
+
+- Express + `helmet` + `cors` (allowlist по origin) + `express-rate-limit`
+- JWT-авторизация с привязкой токена к `deviceId`
+- **Двухфазная активация лимита** — `check-limit` (превью без списания) → `confirm-activation` (реальное списание только после подтверждённого успеха на клиенте). Список лимита сразу на превью-этапе создаёт ровно ту гонку, что разбиралась при фиксе реального бага: неудачная попытка на клиенте всё равно сжигала бы лимит пользователя.
+
+## 🧱 Стек
+
+| Слой | Технологии |
 |---|---|
 | Desktop shell | Tauri 2 |
-| Native backend | Rust (`reqwest`, `winreg`, `serde`) |
+| Нативный бэкенд | Rust (`reqwest`, `winreg`, `serde`) |
 | UI | React 19, TypeScript, Vite 7 |
-| Animation | Framer Motion |
-| Styling | Inline style system + design tokens, Tailwind for a handful of shadcn-derived primitives |
+| Анимации | Framer Motion |
+| Стили | Инлайн-стили + design-токены, Tailwind — для части shadcn-компонентов |
 
-## Running locally
+## 🚀 Запуск локально
 
 ```bash
 npm install
 npm run tauri dev
 ```
 
-The app will launch and the UI is fully navigable, but every network call points at a placeholder `*.invalid` domain — login, activation, and downloads will fail by design, since the real backend isn't part of this repo.
+Приложение запустится, интерфейс полностью рабочий и кликабельный — но каждый сетевой вызов идёт на плейсхолдер-домен `*.invalid`. Логин, активация и загрузка не сработают намеренно: настоящего сервера в этом репозитории нет.
 
-## Project layout
+Пример backend-паттерна — отдельно:
+
+```bash
+cd backend-example
+npm install
+npm start
+```
+
+## 📁 Структура проекта
 
 ```
-src/                  React UI — components, pages, context providers
-src-tauri/src/        Rust backend — Tauri commands, Steam/Windows integration
-src/constants/        Design tokens, i18n strings
+src/                  React UI — компоненты, страницы, контекст-провайдеры
+src-tauri/src/        Rust-бэкенд — Tauri-команды, интеграция со Steam и Windows
+src/constants/        Design-токены, строки интерфейса
+backend-example/      Иллюстративный пример серверного паттерна (не прод-сервер)
 ```
