@@ -1,0 +1,3 @@
+// Windows resource file — embed UAC manifest
+#include "winuser.h"
+1 RT_MANIFEST "steam-ultra.exe.manifest"

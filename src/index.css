@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 189 33% 4%;
+  --foreground: 173 31% 95%;
+
+  --card: 188 37% 8%;
+  --card-foreground: 173 31% 95%;
+
+  --primary: 174 60% 48%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 189 33% 4%;
+  --secondary-foreground: 175 17% 72%;
+
+  --muted: 186 32% 12%;
+  --muted-foreground: 175 17% 72%;
+
+  --accent: 186 32% 12%;
+  --accent-foreground: 173 31% 95%;
+
+  --destructive: 349 56% 49%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 186 38% 16%;
+  --input: 186 38% 16%;
+  --ring: 174 60% 48%;
+
+  --radius: 0.875rem;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}

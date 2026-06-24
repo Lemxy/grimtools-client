@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GrimTool</title>
+    <style>
+      body { user-select: none; -webkit-user-select: none; }
+      input, textarea { user-select: text; -webkit-user-select: text; }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>document.addEventListener('contextmenu', e => e.preventDefault());</script>
+    <script>
+      (function () {
+        var BASE_WIDTH = 1366;
+        function applyZoom() {
+          var w = window.innerWidth;
+          var zoom = w < BASE_WIDTH ? (w / BASE_WIDTH) : 1;
+          document.documentElement.style.zoom = zoom;
+        }
+        applyZoom();
+        window.addEventListener('resize', applyZoom);
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+[profile.dev]
+incremental = false
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-arg=/MANIFEST:NO"]
